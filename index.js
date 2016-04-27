@@ -54,7 +54,7 @@ function handleUnsubscription() {
   });
 }
 
-function echoPackets(cb) {
+function echoPackets(packet, client, cb) {
   if (packet.topic.indexOf('echo') === 0) {
     return cb();
   }
@@ -76,7 +76,7 @@ function statistics(cb) {
     retain: false,
     qos: 0
   }
-
+  
   moscaServer.publish(statistics, cb);
 }
 
@@ -92,6 +92,6 @@ moscaServer.on('ready', function () {
 });
 
 moscaServer.published = function(packet, client, cb) {
-  echoPackets(cb);
+  echoPackets(packet, client, cb);
   statistics(cb);
 };
