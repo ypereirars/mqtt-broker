@@ -3,12 +3,12 @@ var mosca       = require('mosca'),
     persistence = { },
     settings    = {
       port: 1884,
-      logger: {
-          streams: [{
-              level: 'debug',
-              path: './log'
-          }]
-      },
+      // logger: {
+      //     streams: [{
+      //         level: 'debug',
+      //         path: './log'
+      //     }]
+      // },
       backend: backend,
       persistence: persistence
     },
