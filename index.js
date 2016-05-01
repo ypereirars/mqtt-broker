@@ -13,7 +13,8 @@ var mosca       = require('mosca'),
       persistence: persistence
     },
     moscaServer = new mosca.Server(settings),
-    clientsConnected = { count: 0 };
+    clientsConnected = { count: 0 },
+    stackOfTopics = {};
 
 function clientExists(client, callback) {
   if (typeof clientsConnected[client.id] === undefined) {
@@ -54,19 +55,31 @@ function handleUnsubscription() {
   });
 }
 
-function echoPackets(packet, cb) {
+function aggregatePackets(packet, cb) {
   if (packet.topic.indexOf('echo') === 0) {
     return cb();
   }
 
-  var newPacket = {
-    topic: 'echo/' + packet.topic,
-    payload: packet.payload,
-    retain: packet.retain,
-    qos: packet.qos
-  };
+  var topic = packet.topic,
+      sendPacket = {
+        payload: {},
+        topic: topic.substring(0, topic.lastIndexOf('/')) + "/json",
+        retain: packet.retain,
+        qos: packet.qos
+      };
 
-  moscaServer.publish(newPacket, cb);
+  if (topic.indexOf("$SYS") < 0 && topic.indexOf("json") < 0) {
+    var key = topic.substring(topic.lastIndexOf('/')+1, topic.length);
+
+    if (typeof stackOfTopics[key] === 'undefined')
+      stackOfTopics[key] = packet.payload.toString();
+    else {
+      sendPacket.payload = JSON.stringify(stackOfTopics);
+      moscaServer.publish(sendPacket, cb);
+      stackOfTopics = {}
+      stackOfTopics[key] = packet.payload.toString();
+    }
+  }
 }
 
 handleClientConnected();
@@ -80,5 +93,5 @@ moscaServer.on('ready', function () {
 });
 
 moscaServer.published = function(packet, client, cb) {
-  echoPackets(packet, cb);
+  aggregatePackets(packet, cb);
 };
