@@ -17,7 +17,7 @@ var mosca       = require('mosca'),
     stackOfTopics = {};
 
 function clientExists(client, callback) {
-  if (typeof clientsConnected[client.id] === undefined) {
+  if (typeof clientsConnected[client.id] === 'undefined') {
     return;
   };
   callback();
