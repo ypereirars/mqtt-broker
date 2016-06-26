@@ -63,21 +63,28 @@ function aggregatePackets(packet, cb) {
   var topic = packet.topic,
       sendPacket = {
         payload: {},
-        topic: topic.substring(0, topic.lastIndexOf('/')) + "/json",
-        retain: packet.retain,
-        qos: packet.qos
+        topic: '',
+        retain: false,
+        qos: 0
       };
 
-  if (topic.indexOf("$SYS") < 0 && topic.indexOf("json") < 0) {
-    var key = topic.substring(topic.lastIndexOf('/')+1, topic.length);
+  if (topic.indexOf("$SYS") < 0 && topic.indexOf("#") < 0) {
+    var topicSplited  = packet.topic.split('/'),
+        topicObj = {
+          id: topicSplited[0],
+          device: topicSplited[1],
+          sensor: topicSplited[2]
+        };
 
-    if (typeof stackOfTopics[key] === 'undefined')
-      stackOfTopics[key] = packet.payload.toString();
+    if (typeof stackOfTopics[topicObj.sensor] === 'undefined') {
+      stackOfTopics[topicObj.sensor] = packet.payload.toString();
+    }
     else {
+      sendPacket.topic = topicSplited.slice(0, 2).join('/') + "/#";
       sendPacket.payload = JSON.stringify(stackOfTopics);
       moscaServer.publish(sendPacket, cb);
       stackOfTopics = {}
-      stackOfTopics[key] = packet.payload.toString();
+      stackOfTopics[topicObj.sensor] = packet.payload.toString();
     }
   }
 }
